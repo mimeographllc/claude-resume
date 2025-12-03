@@ -46,6 +46,8 @@ function DocumentManager({ onDocumentsChange }) {
       setUploading(true);
       setUploadStatus({ type: 'loading', message: 'Uploading and embedding document...' });
 
+      console.log('Uploading to:', `${API_BASE_URL}/documents/upload`);
+      
       await axios.post(`${API_BASE_URL}/documents/upload`, uploadForm);
 
       setUploadStatus({ 
@@ -62,10 +64,22 @@ function DocumentManager({ onDocumentsChange }) {
       // Clear status after 3 seconds
       setTimeout(() => setUploadStatus(null), 3000);
     } catch (error) {
-      console.error('Error uploading document:', error);
+      console.error('Upload error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        url: error.config?.url
+      });
+      
+      let errorMessage = `Upload failed: ${error.response?.data?.detail || error.message}`;
+      
+      if (error.code === 'ERR_NETWORK') {
+        errorMessage = '🔌 Network Error: Cannot connect to backend. Ensure backend is running on http://localhost:8000';
+      }
+      
       setUploadStatus({ 
         type: 'error', 
-        message: `Upload failed: ${error.response?.data?.detail || error.message}` 
+        message: errorMessage
       });
     } finally {
       setUploading(false);

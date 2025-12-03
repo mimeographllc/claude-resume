@@ -19,7 +19,15 @@ app = FastAPI(title="Resume RAG API", version="1.0.0")
 # CORS configuration for frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, specify your frontend domain
+    allow_origins=[
+        "http://localhost:3000",
+        "http://localhost:3001", 
+        "http://127.0.0.1:3000",
+        "http://local.pingblender.com",
+        "http://local.pingblender.com:3000",
+        "https://local.pingblender.com",
+        "https://local.pingblender.com:3000",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -147,6 +155,9 @@ async def get_embedding(text: str) -> List[float]:
 
 async def similarity_search(query_embedding: List[float], limit: int = 5) -> List[dict]:
     """Search for similar chunks using cosine similarity"""
+    # Convert embedding list to PostgreSQL vector format: '[1,2,3]'
+    embedding_str = '[' + ','.join(map(str, query_embedding)) + ']'
+    
     async with db_pool.acquire() as conn:
         results = await conn.fetch("""
             SELECT 
@@ -158,7 +169,7 @@ async def similarity_search(query_embedding: List[float], limit: int = 5) -> Lis
             JOIN documents d ON e.document_id = d.id
             ORDER BY e.embedding <=> $1::vector
             LIMIT $2;
-        """, query_embedding, limit)
+        """, embedding_str, limit)
         
         return [
             {
@@ -210,10 +221,12 @@ async def upload_document(doc: DocumentUpload):
             # Generate and store embeddings for each chunk
             for idx, chunk in enumerate(chunks):
                 embedding = await get_embedding(chunk)
+                # Convert embedding list to PostgreSQL vector format
+                embedding_str = '[' + ','.join(map(str, embedding)) + ']'
                 await conn.execute("""
                     INSERT INTO embeddings (document_id, chunk_text, chunk_index, embedding)
                     VALUES ($1, $2, $3, $4)
-                """, doc_id, chunk, idx, embedding)
+                """, doc_id, chunk, idx, embedding_str)
             
             return DocumentResponse(
                 id=doc_id,

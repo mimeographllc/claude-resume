@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import ChatInterface from './components/ChatInterface';
 import DocumentManager from './components/DocumentManager';
+import NetworkStatus from './components/NetworkStatus';
 import './App.css';
 
 function App() {
@@ -9,10 +10,20 @@ function App() {
 
   return (
     <div className="App">
+      <NetworkStatus />
       <header className="app-header">
         <div className="header-content">
-          <h1>💼 Daniel Shields - AI Resume Assistant</h1>
-          <p className="subtitle">Ask me anything about Daniel's experience, skills, and projects</p>
+          <div className="header-left">
+            <div className="avatar-badge">DS</div>
+            <div className="header-info">
+              <h1>Daniel Shields - AI Systems Architect</h1>
+              <p className="subtitle">Interactive Resume Assistant • RAG-Powered Conversations</p>
+            </div>
+          </div>
+          <div className="header-badge">
+            <span className="status-dot"></span>
+            AI Online
+          </div>
         </div>
         <nav className="tabs">
           <button
@@ -25,7 +36,7 @@ function App() {
             className={`tab ${activeTab === 'documents' ? 'active' : ''}`}
             onClick={() => setActiveTab('documents')}
           >
-            📄 Documents
+            📄 Knowledge Base
           </button>
         </nav>
       </header>
@@ -40,13 +51,13 @@ function App() {
 
       <footer className="app-footer">
         <p>
-          Powered by OpenAI GPT-4 + PGVector RAG | Built by Daniel Shields |{' '}
+          Powered by OpenAI GPT-4 + PGVector RAG | Designed & Built by Daniel Shields |{' '}
           <a 
             href="https://github.com/mimeographllc/claude-resume" 
             target="_blank" 
             rel="noopener noreferrer"
           >
-            View on GitHub
+            View on GitHub →
           </a>
         </p>
       </footer>

@@ -25,7 +25,7 @@ async def load_resume():
     print(f"   File size: {len(resume_content)} characters")
     
     # API endpoint
-    api_url = "http://localhost:8000/documents/upload"
+    api_url = "http://local.pingblender.com:8000/documents/upload"
     
     # Prepare document
     document = {
@@ -54,7 +54,7 @@ async def load_resume():
             
     except requests.exceptions.ConnectionError:
         print("\n❌ Cannot connect to backend API")
-        print("   Make sure the backend is running on http://localhost:8000")
+        print("   Make sure the backend is running on http://local.pingblender.com:8000")
         print("\n   Start the backend with:")
         print("   cd backend && python main.py")
         return False

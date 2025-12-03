@@ -1,4 +1,16 @@
-FROM python:3.11-slim
+FROM python:3.14-slim
+ARG REQUESTS_CA_BUNDLE
+LABEL maintainer="synthetiqsignals.com" \
+    org.label-schema.docker.dockerfile="/Dockerfile" \
+    org.label-schema.name="EHR Signals Agent for Heathcare RCM" 
+
+#python variable settings for image set
+ENV PYTHONPATH="/app/signals/" \
+    PYTHONDONTWITEBYTECODE=1 \
+    PYTHONBUFFERED=1 \
+    REQUESTS_CA_BUNDLE=${REQUESTS_CA_BUNDLE}
+
+COPY ${REQUESTS_CA_BUNDLE} /etc/docker/certs.d/
 
 WORKDIR /app
 

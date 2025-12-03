@@ -28,93 +28,41 @@ function ChatInterface({ documentsLoaded }) {
   // Initialize D-ID avatar
   const initializeAvatar = async () => {
     try {
-      // Note: In production, you'd get this from your backend
+      // Check if D-ID API key is configured
       const DID_API_KEY = process.env.REACT_APP_DID_API_KEY;
       
       if (!DID_API_KEY) {
-        console.warn('D-ID API key not configured. Avatar features disabled.');
+        console.info('D-ID API key not configured. Avatar features disabled.');
+        setAvatarEnabled(false);
         return;
       }
 
-      // Create D-ID stream
-      const response = await fetch('https://api.d-id.com/talks/streams', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Basic ${DID_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          source_url: 'https://d-id-public-bucket.s3.amazonaws.com/alice.jpg', // Default avatar
-        }),
-      });
-
-      const data = await response.json();
-      streamRef.current = data;
+      // Simple avatar initialization with D-ID
+      // Note: Full WebRTC streaming requires additional setup
+      // For now, we'll show a placeholder that can be enhanced
+      console.log('D-ID avatar initialization would happen here');
+      console.log('For full implementation, see D-ID documentation: https://docs.d-id.com/');
       
-      // Initialize video element with stream
-      if (videoRef.current && data.session_id) {
-        const { RTCPeerConnection, RTCSessionDescription } = window;
-        const peerConnection = new RTCPeerConnection();
-        
-        peerConnection.ontrack = (event) => {
-          if (videoRef.current) {
-            videoRef.current.srcObject = event.streams[0];
-          }
-        };
-
-        const offer = await peerConnection.createOffer();
-        await peerConnection.setLocalDescription(offer);
-
-        // Send offer to D-ID
-        const sdpResponse = await fetch(`https://api.d-id.com/talks/streams/${data.id}/sdp`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Basic ${DID_API_KEY}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            answer: offer,
-            session_id: data.session_id,
-          }),
-        });
-
-        const sdpData = await sdpResponse.json();
-        await peerConnection.setRemoteDescription(
-          new RTCSessionDescription(sdpData)
-        );
-
-        setAvatarEnabled(true);
-      }
+      // Placeholder: In production, you'd implement the full D-ID WebRTC flow
+      setAvatarEnabled(false); // Keep disabled until fully implemented
+      
     } catch (error) {
       console.error('Error initializing avatar:', error);
+      setAvatarEnabled(false);
     }
   };
 
-  // Speak with avatar
+  // Speak with avatar (placeholder for D-ID integration)
   const speakWithAvatar = async (text) => {
     if (!streamRef.current || !avatarEnabled) return;
 
     try {
       setAvatarSpeaking(true);
       
-      const DID_API_KEY = process.env.REACT_APP_DID_API_KEY;
-      
-      await fetch(`https://api.d-id.com/talks/streams/${streamRef.current.id}`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Basic ${DID_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          script: {
-            type: 'text',
-            input: text,
-          },
-        }),
-      });
-
-      // Wait for speech to complete (estimate based on text length)
+      // In production, this would send text to D-ID API for avatar speech
+      // For now, just simulate speaking duration
       const estimatedDuration = (text.length / 15) * 1000; // ~15 chars per second
+      
       setTimeout(() => {
         setAvatarSpeaking(false);
       }, estimatedDuration);
@@ -137,11 +85,16 @@ function ChatInterface({ documentsLoaded }) {
     setMessages(newMessages);
 
     try {
+      console.log('Sending request to:', `${API_BASE_URL}/chat`);
+      console.log('API_BASE_URL:', API_BASE_URL);
+      
       // Send to backend
       const response = await axios.post(`${API_BASE_URL}/chat`, {
         message: userMessage,
         conversation_id: conversationId,
       });
+
+      console.log('Response received:', response.status);
 
       const { response: aiResponse, conversation_id, sources } = response.data;
 
@@ -162,12 +115,35 @@ function ChatInterface({ documentsLoaded }) {
         await speakWithAvatar(aiResponse);
       }
     } catch (error) {
-      console.error('Error sending message:', error);
+      console.error('Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        config: {
+          url: error.config?.url,
+          method: error.config?.method,
+          headers: error.config?.headers
+        }
+      });
+      
+      let errorMessage = 'Sorry, I encountered an error. Please try again.';
+      
+      if (error.code === 'ERR_NETWORK') {
+        errorMessage = '🔌 Network Error: Cannot connect to backend. Please ensure:\n\n' +
+          '1. Backend is running (cd backend && python main.py)\n' +
+          '2. Backend is on http://localhost:8000\n' +
+          '3. Check browser console (F12) for details';
+      } else if (error.response?.status === 404) {
+        errorMessage = '❌ API endpoint not found. Backend may not be running correctly.';
+      } else if (error.response?.status === 500) {
+        errorMessage = '⚠️ Backend server error: ' + (error.response?.data?.detail || 'Unknown error');
+      }
+      
       setMessages([
         ...newMessages,
         {
           role: 'assistant',
-          content: 'Sorry, I encountered an error. Please try again.',
+          content: errorMessage,
           error: true,
         },
       ]);
